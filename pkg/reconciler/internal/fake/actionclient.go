@@ -20,6 +20,7 @@ import (
 	"context"
 	"errors"
 
+	"helm.sh/helm/v3/pkg/action"
 	"helm.sh/helm/v3/pkg/chart"
 	"helm.sh/helm/v3/pkg/release"
 	crclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -55,6 +56,7 @@ type ActionClient struct {
 	Upgrades   []UpgradeCall
 	Uninstalls []UninstallCall
 	Reconciles []ReconcileCall
+	Configs    []ConfigCall
 
 	HandleGet       func() (*release.Release, error)
 	HandleHistory   func() ([]*release.Release, error)
@@ -62,6 +64,7 @@ type ActionClient struct {
 	HandleUpgrade   func() (*release.Release, error)
 	HandleUninstall func() (*release.UninstallReleaseResponse, error)
 	HandleReconcile func() error
+	HandleConfig    func() *action.Configuration
 }
 
 func NewActionClient() ActionClient {
@@ -77,6 +80,9 @@ func NewActionClient() ActionClient {
 	recFunc := func(err error) func() error {
 		return func() error { return err }
 	}
+	conFunc := func(conf *action.Configuration) func() *action.Configuration {
+		return func() *action.Configuration { return conf }
+	}
 	return ActionClient{
 		Gets:       make([]GetCall, 0),
 		Histories:  make([]HistoryCall, 0),
@@ -84,6 +90,7 @@ func NewActionClient() ActionClient {
 		Upgrades:   make([]UpgradeCall, 0),
 		Uninstalls: make([]UninstallCall, 0),
 		Reconciles: make([]ReconcileCall, 0),
+		Configs:    make([]ConfigCall, 0),
 
 		HandleGet:       relFunc(errors.New("get not implemented")),
 		HandleHistory:   historyFunc(errors.New("history not implemented")),
@@ -91,6 +98,7 @@ func NewActionClient() ActionClient {
 		HandleUpgrade:   relFunc(errors.New("upgrade not implemented")),
 		HandleUninstall: uninstFunc(errors.New("uninstall not implemented")),
 		HandleReconcile: recFunc(errors.New("reconcile not implemented")),
+		HandleConfig:    conFunc(nil),
 	}
 }
 
@@ -131,6 +139,8 @@ type ReconcileCall struct {
 	Release *release.Release
 }
 
+type ConfigCall struct{}
+
 func (c *ActionClient) Get(name string, opts ...client.GetOption) (*release.Release, error) {
 	c.Gets = append(c.Gets, GetCall{name, opts})
 	return c.HandleGet()
@@ -159,4 +169,9 @@ func (c *ActionClient) Uninstall(name string, opts ...client.UninstallOption) (*
 func (c *ActionClient) Reconcile(rel *release.Release) error {
 	c.Reconciles = append(c.Reconciles, ReconcileCall{rel})
 	return c.HandleReconcile()
+}
+
+func (c *ActionClient) Config() *action.Configuration {
+	c.Configs = append(c.Configs, ConfigCall{})
+	return c.HandleConfig()
 }

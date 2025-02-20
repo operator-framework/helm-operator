@@ -58,6 +58,7 @@ type ActionInterface interface {
 	Upgrade(name, namespace string, chrt *chart.Chart, vals map[string]interface{}, opts ...UpgradeOption) (*release.Release, error)
 	Uninstall(name string, opts ...UninstallOption) (*release.UninstallReleaseResponse, error)
 	Reconcile(rel *release.Release) error
+	Config() *action.Configuration
 }
 
 type GetOption func(*action.Get) error
@@ -211,6 +212,11 @@ type actionClient struct {
 }
 
 var _ ActionInterface = &actionClient{}
+
+// Config returns action.Configuration that this actionClient uses.
+func (c *actionClient) Config() *action.Configuration {
+	return c.conf
+}
 
 func (c *actionClient) Get(name string, opts ...GetOption) (*release.Release, error) {
 	get := action.NewGet(c.conf)

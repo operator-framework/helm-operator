@@ -454,6 +454,12 @@ var _ = Describe("ActionClient", func() {
 					Expect(resp).To(BeNil())
 				})
 			})
+			var _ = Describe("Config", func() {
+				It("should succeed", func() {
+					config := ac.Config()
+					Expect(config).NotTo(BeNil())
+				})
+			})
 		})
 
 		When("release is installed", func() {
@@ -672,6 +678,12 @@ var _ = Describe("ActionClient", func() {
 						Expect(err).ToNot(HaveOccurred())
 					})
 					verifyRelease(cl, obj, installedRelease)
+				})
+			})
+			var _ = Describe("Config", func() {
+				It("should succeed", func() {
+					config := ac.Config()
+					Expect(config).NotTo(BeNil())
 				})
 			})
 		})
